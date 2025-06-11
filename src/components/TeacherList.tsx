@@ -1,4 +1,15 @@
+"use client";
+
 import { Teacher } from "../types";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 interface TeacherListProps {
   teachers: Teacher[];
@@ -6,30 +17,34 @@ interface TeacherListProps {
 
 export default function TeacherList({ teachers }: TeacherListProps) {
   return (
-    <div
-      className="bg-white p-6 rounded shadow-md mt-6"
-      style={{ color: "black" }}
-    >
-      <h2 className="text-xl font-bold mb-4">Teachers</h2>
+    <div>
       {teachers.length === 0 ? (
-        <p>No teachers found.</p>
+        <p className="text-muted-foreground">
+          No teachers found. Add a teacher to get started.
+        </p>
       ) : (
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border p-2">Name</th>
-              <th className="border p-2">Subject</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Subject</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {teachers.map((teacher) => (
-              <tr key={teacher.id} className="hover:bg-gray-100">
-                <td className="border p-2">{teacher.full_name}</td>
-                <td className="border p-2">{teacher.subject_name}</td>
-              </tr>
+              <TableRow key={teacher.id}>
+                <TableCell>{teacher.full_name}</TableCell>
+                <TableCell>{teacher.subject_name}</TableCell>
+                <TableCell>
+                  <Button variant="outline" size="sm" disabled>
+                    Edit (Coming Soon)
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
     </div>
   );
