@@ -3,8 +3,10 @@ export interface Teacher {
   user_id: string;
   school_id: string;
   subject_id: string;
-  subject_name: string;
   full_name: string;
+  subject_name: string;
+  is_class_teacher: boolean;
+  class_assigned: string | null;
 }
 
 export interface Subject {

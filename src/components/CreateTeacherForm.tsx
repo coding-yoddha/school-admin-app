@@ -30,6 +30,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Subject } from "../types";
+import { Switch } from "./ui/switch";
 
 interface CreateTeacherFormProps {
   isOpen: boolean;
@@ -38,15 +39,42 @@ interface CreateTeacherFormProps {
   onTeacherCreated: () => void;
 }
 
-const formSchema = z.object({
-  email: z
-    .string()
-    .email("Please enter a valid email")
-    .min(1, "Email is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  fullName: z.string().min(1, "Full name is required"),
-  subjectId: z.string().min(1, "Subject is required"),
-});
+const VALID_CLASSES = [
+  "Nursery",
+  "LKG",
+  "UKG",
+  "Class 1",
+  "Class 2",
+  "Class 3",
+  "Class 4",
+  "Class 5",
+];
+
+const formSchema = z
+  .object({
+    email: z
+      .string()
+      .email("Please enter a valid email")
+      .min(1, "Email is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    fullName: z.string().min(1, "Full name is required"),
+    subjectId: z.string().min(1, "Subject is required"),
+    isClassTeacher: z.boolean(),
+    classAssigned: z
+      .string()
+      .nullable()
+      .refine((val) => !val || VALID_CLASSES.includes(val), {
+        message: "Invalid class selected",
+      }),
+  })
+  .refine(
+    (data) =>
+      !data.isClassTeacher || (data.isClassTeacher && data.classAssigned),
+    {
+      message: "Class must be selected for class teacher",
+      path: ["classAssigned"],
+    }
+  );
 
 export default function CreateTeacherForm({
   isOpen,
@@ -63,8 +91,12 @@ export default function CreateTeacherForm({
       password: "",
       fullName: "",
       subjectId: "",
+      isClassTeacher: false,
+      classAssigned: null,
     },
   });
+
+  const isClassTeacher = form.watch("isClassTeacher");
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -93,6 +125,8 @@ export default function CreateTeacherForm({
         password: values.password,
         subjectId: values.subjectId,
         full_name: values.fullName,
+        is_class_teacher: values.isClassTeacher,
+        class_assigned: values.isClassTeacher ? values.classAssigned : null,
       }),
     });
 
@@ -185,6 +219,50 @@ export default function CreateTeacherForm({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="isClassTeacher"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel>Is Class Teacher</FormLabel>
+                </FormItem>
+              )}
+            />
+            {isClassTeacher && (
+              <FormField
+                control={form.control}
+                name="classAssigned"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a class" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {VALID_CLASSES.map((className) => (
+                          <SelectItem key={className} value={className}>
+                            {className}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             {form.formState.errors.root && (
               <p className="text-sm text-destructive">
                 {form.formState.errors.root.message}

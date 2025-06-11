@@ -70,7 +70,9 @@ export default function DashboardPage() {
       if (role === "admin" && school_id) {
         const { data: teacherData } = await supabase
           .from("teachers")
-          .select("id, user_id, school_id, subject_id")
+          .select(
+            "id, user_id, school_id, subject_id, is_class_teacher, class_assigned"
+          )
           .eq("school_id", school_id);
 
         if (teacherData) {
@@ -97,6 +99,8 @@ export default function DashboardPage() {
               "Unknown",
             full_name:
               userData?.find((u) => u.id === t.user_id)?.full_name || "Unknown",
+            is_class_teacher: t.is_class_teacher,
+            class_assigned: t.class_assigned,
           }));
 
           setTeachers(teachersWithDetails);
@@ -123,7 +127,9 @@ export default function DashboardPage() {
     if (schoolId) {
       const { data } = await supabase
         .from("teachers")
-        .select("id, user_id, school_id, subject_id")
+        .select(
+          "id, user_id, school_id, subject_id, is_class_teacher, class_assigned"
+        )
         .eq("school_id", schoolId);
 
       if (data) {
@@ -146,12 +152,16 @@ export default function DashboardPage() {
           full_name:
             userRes.data?.find((u) => u.id === t.user_id)?.full_name ||
             "Unknown",
+          is_class_teacher: t.is_class_teacher,
+          class_assigned: t.class_assigned,
         }));
         setTeachers(teachersWithDetails);
       }
     }
     setIsCreateTeacherOpen(false);
-    toast("The teacher has been added successfully.");
+    toast("Teacher Created", {
+      description: "The teacher has been added successfully.",
+    });
   };
 
   // Chart data
@@ -243,7 +253,8 @@ export default function DashboardPage() {
                     onClick={() => setIsCreateTeacherOpen(true)}
                     className="w-full sm:w-auto"
                   >
-                    <Plus className="mr-2 h-4 w-4" /> Add New Teacher
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add New Teacher
                   </Button>
                 </CardContent>
               </Card>
@@ -300,7 +311,7 @@ export default function DashboardPage() {
                   <CardTitle>Student Enrollment Trend</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer>
                     <LineChart data={studentEnrollment}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />

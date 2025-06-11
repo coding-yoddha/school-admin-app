@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface TeacherListProps {
   teachers: Teacher[];
@@ -28,6 +29,8 @@ export default function TeacherList({ teachers }: TeacherListProps) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Subject</TableHead>
+              <TableHead>Class Teacher</TableHead>
+              <TableHead>Assigned Class</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -36,6 +39,14 @@ export default function TeacherList({ teachers }: TeacherListProps) {
               <TableRow key={teacher.id}>
                 <TableCell>{teacher.full_name}</TableCell>
                 <TableCell>{teacher.subject_name}</TableCell>
+                <TableCell>
+                  {teacher.is_class_teacher ? (
+                    <Badge variant="default">Class Teacher</Badge>
+                  ) : (
+                    <Badge variant="secondary">-</Badge>
+                  )}
+                </TableCell>
+                <TableCell>{teacher.class_assigned || "-"}</TableCell>
                 <TableCell>
                   <Button variant="outline" size="sm" disabled>
                     Edit (Coming Soon)

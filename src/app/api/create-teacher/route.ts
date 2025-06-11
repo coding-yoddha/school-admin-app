@@ -1,12 +1,60 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+import { z } from "zod";
+
+const VALID_CLASSES = [
+  "Nursery",
+  "LKG",
+  "UKG",
+  "Class 1",
+  "Class 2",
+  "Class 3",
+  "Class 4",
+  "Class 5",
+];
+
+const schema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    full_name: z.string().min(1),
+    subjectId: z.string().uuid(),
+    is_class_teacher: z.boolean().default(false),
+    class_assigned: z
+      .string()
+      .nullable()
+      .refine((val) => !val || VALID_CLASSES.includes(val), {
+        message: "Invalid class assigned",
+      }),
+  })
+  .refine(
+    (data) =>
+      !data.is_class_teacher || (data.is_class_teacher && data.class_assigned),
+    {
+      message: "Class must be assigned if teacher is a class teacher",
+      path: ["class_assigned"],
+    }
+  );
+
 export async function POST(request: Request) {
   try {
     const authHeader = request.headers.get("Authorization");
-    console.log("Authorization Header:", authHeader);
 
-    const { email, password, subjectId, full_name } = await request.json();
+    const body = await request.json();
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors }, { status: 400 });
+    }
+
+    const {
+      email,
+      password,
+      subjectId,
+      full_name,
+      is_class_teacher,
+      class_assigned,
+    } = parsed.data;
     let authUser = null;
     let authError = null;
 
@@ -28,7 +76,6 @@ export async function POST(request: Request) {
       authError = error;
     }
 
-    console.log("Auth User:", authUser?.id, authUser?.email);
     if (authError) {
       console.error("Auth Error:", authError.message, authError);
     }
@@ -45,7 +92,6 @@ export async function POST(request: Request) {
       .eq("id", authUser.id)
       .single();
 
-    console.log("User Data:", userData);
     if (userError) {
       console.error("User Query Error:", userError.message, userError);
     }
@@ -114,6 +160,8 @@ export async function POST(request: Request) {
         user_id: newUser!.user.id,
         school_id: schoolId,
         subject_id: subjectId,
+        is_class_teacher,
+        class_assigned: is_class_teacher ? class_assigned : null,
       });
 
     if (teacherError) {
