@@ -58,7 +58,6 @@ const formSchema = z
       .min(1, "Email is required"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     fullName: z.string().min(1, "Full name is required"),
-    subjectId: z.string().min(1, "Subject is required"),
     isClassTeacher: z.boolean(),
     classAssigned: z
       .string()
@@ -90,7 +89,6 @@ export default function CreateTeacherForm({
       email: "",
       password: "",
       fullName: "",
-      subjectId: "",
       isClassTeacher: false,
       classAssigned: null,
     },
@@ -123,7 +121,6 @@ export default function CreateTeacherForm({
       body: JSON.stringify({
         email: values.email,
         password: values.password,
-        subjectId: values.subjectId,
         full_name: values.fullName,
         is_class_teacher: values.isClassTeacher,
         class_assigned: values.isClassTeacher ? values.classAssigned : null,
@@ -192,7 +189,7 @@ export default function CreateTeacherForm({
                 </FormItem>
               )}
             />
-            <FormField
+            {/* <FormField
               control={form.control}
               name="subjectId"
               render={({ field }) => (
@@ -218,7 +215,7 @@ export default function CreateTeacherForm({
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
             <FormField
               control={form.control}
               name="isClassTeacher"

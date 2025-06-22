@@ -6,12 +6,12 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   full_name: z.string().min(1),
-  is_class_teacher: z.boolean(),
-  class_assigned: z.string().nullable(),
+  school_id: z.string().uuid(),
 });
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("Authorization");
+  console.log("Authorization Header:", authHeader);
 
   if (!authHeader?.startsWith("Bearer ")) {
     console.error("Missing or invalid Authorization header");
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
   }
 
   const token = authHeader.replace("Bearer ", "");
+  console.log("Extracted Token:", token.slice(0, 20) + "...");
 
   const {
     data: { user },
@@ -35,30 +36,31 @@ export async function POST(request: Request) {
     );
   }
 
-  const { user_metadata: userMetadata } = user;
-  if (!userMetadata?.roles?.includes("admin")) {
-    console.error("User is not admin:", userMetadata?.roles);
+  console.log("Authenticated User:", user.id, user.user_metadata);
+
+  const { user_metadata } = user;
+  if (!user_metadata?.roles?.includes("super_admin")) {
+    console.error("User is not super_admin:", user_metadata?.roles);
     return NextResponse.json(
-      { error: "Forbidden: Not an admin" },
+      { error: "Forbidden: Not a super admin" },
       { status: 403 }
     );
   }
 
   const body = await request.json();
-
+  console.log("Request Body:", body);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     console.error("Validation Errors:", parsed.error.errors);
     return NextResponse.json({ error: parsed.error.errors }, { status: 400 });
   }
 
-  const { email, password, full_name, is_class_teacher, class_assigned } =
-    parsed.data;
+  const { email, password, full_name, school_id } = parsed.data;
 
   const { data: schoolData, error: schoolError } = await supabaseAdmin
     .from("schools")
     .select("id")
-    .eq("id", userMetadata.school_id)
+    .eq("id", school_id)
     .single();
 
   if (schoolError || !schoolData) {
@@ -71,48 +73,24 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: {
-        full_name,
-        roles: ["teacher"],
-        school_id: userMetadata.school_id,
-      },
-      app_metadata: { roles: ["teacher"], school_id: userMetadata.school_id },
+      user_metadata: { full_name, roles: ["admin"], school_id },
+      app_metadata: { roles: ["admin"], school_id },
     });
 
   if (signupError || !signupData.user) {
     console.error(
       "Signup Error:",
-      signupError?.message || "Failed to create teacher"
+      signupError?.message || "Failed to create admin"
     );
     return NextResponse.json(
-      { error: signupError?.message || "Failed to create teacher" },
+      { error: signupError?.message || "Failed to create admin" },
       { status: 400 }
     );
   }
 
-  console.log("userMetaData", userMetadata);
-
-  const { error: insertTeacherError } = await supabaseAdmin
-    .from("teachers")
-    .insert({
-      user_id: signupData.user.id,
-      school_id: userMetadata.school_id,
-      is_class_teacher,
-      class_assigned,
-    });
-
-  if (insertTeacherError) {
-    console.error("Teachers Table Insert Error:", insertTeacherError.message);
-    await supabaseAdmin.auth.admin.deleteUser(signupData.user.id);
-    console.log("Rolled back Auth user:", signupData.user.id);
-    return NextResponse.json(
-      { error: `Failed to insert teacher: ${insertTeacherError.message}` },
-      { status: 400 }
-    );
-  }
-
+  console.log("Admin Created:", signupData.user.id, signupData.user.email);
   return NextResponse.json(
-    { message: "Teacher created successfully" },
+    { message: "Admin created successfully" },
     { status: 201 }
   );
 }

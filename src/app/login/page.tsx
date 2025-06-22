@@ -19,12 +19,21 @@ export default function LoginPage() {
       password,
     });
 
-    console.log("data", data, error);
-
     if (error) {
       setError(error.message);
     } else {
-      router.push("/dashboard");
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      const userMeta = session?.user?.user_metadata;
+
+      if (userMeta?.roles.includes("super_admin")) {
+        router.push("/super-admin-dashboard");
+      } else if (userMeta?.roles.includes("admin")) {
+        router.push("/admin-dashboard");
+      }
     }
   };
 
